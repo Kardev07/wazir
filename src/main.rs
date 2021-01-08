@@ -13,16 +13,46 @@ async fn install(value: &Value, name: &str) {
             .expect("Error: Not a string."),
     )
     .await
-    .unwrap();
+    .expect("An error occured");
 
-    let file_type = request
-        .headers()
-        .get("Content-Type")
-        .expect("Expected a Content-Type header.")
-        .to_str()
-        .expect("Content-Type is not a string"); // I suspect this will never happen
+    if value[name]["sa"].as_bool().unwrap() {
+        let out_dir = std::fs::read_dir(".")
+            .expect("Couldn't read directory")
+            .find_map(|(v)| {
+                if v.unwrap().file_name().into_string().unwrap().as_str() == "bin" {
+                    Some(true)
+                } else {
+                    None
+                }
+            });
+        match out_dir {
+            None => {
+                let new_dir = std::fs::create_dir("bin").ok();
+            }
+            Some(_) => {
+                let file_type = value[name].get("type");
 
-    println!("{}", file_type);
+                let ext = match file_type {
+                    None => "",
+                    Some(t) => t.as_str().unwrap(),
+                }
+                .to_string();
+
+                std::fs::write(
+                    format!(
+                        "bin/{}{}",
+                        name,
+                        if ext == "" { ext } else { format!(".{}", ext) }
+                    )
+                    .as_str(),
+                    request
+                        .bytes()
+                        .await
+                        .expect("Error in unwrapping the bytes"),
+                );
+            }
+        }
+    }
 }
 
 #[tokio::main]
@@ -34,6 +64,7 @@ async fn main() {
         // TODO: Print help.
         return;
     }
+
     match argv[1].as_str() {
         "install" => {
             if argv.len() > 2 {
