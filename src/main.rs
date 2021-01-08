@@ -5,12 +5,28 @@ fn read_index() -> Result<Value, serde_json::Error> {
     Ok(from_str(temp.as_str()).unwrap())
 }
 
-fn install(name: &str) {
-    // TODO: Installation Code
-    // Pull the code from the respective URL, and extract if a zip file.
+async fn install(value: &Value, name: &str) {
+    println!(r#"Installing  "{}"..."#, name);
+    let request = reqwest::get(
+        value[name]["latest"]
+            .as_str()
+            .expect("Error: Not a string."),
+    )
+    .await
+    .unwrap();
+
+    let file_type = request
+        .headers()
+        .get("Content-Type")
+        .expect("Expected a Content-Type header.")
+        .to_str()
+        .expect("Content-Type is not a string"); // I suspect this will never happen
+
+    println!("{}", file_type);
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let index: Value = read_index().unwrap();
     let argv = std::env::args().collect::<Vec<String>>();
 
@@ -21,11 +37,11 @@ fn main() {
     match argv[1].as_str() {
         "install" => {
             if argv.len() > 2 {
-                install(argv[2].as_str());
+                install(&index, argv[2].as_str()).await;
             }
         }
         _ => {}
     }
 
-    println!("{}", index[argv[1].as_str()]);
+    // println!("{}", index[argv[1].as_str()]);
 }
