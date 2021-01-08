@@ -12,7 +12,7 @@ Make a contribution to this repo to make this tool a reality.
 
 - [x] Index Loading
 - [ ] Improved index which includes commonly used tools.
-- [ ] Downloading
+- [x] Downloading
 - [ ] Unzipping
 - [ ] A Directory Structure which works for standalone apps and apps which have multiple files (like `node`)
 - [ ] Version Switching
