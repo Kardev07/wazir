@@ -1,4 +1,4 @@
-use std::{fs, io};
+use std::fs;
 
 pub fn extract_zip(name: &str) {
     let fname = std::path::Path::new(name);
@@ -7,5 +7,7 @@ pub fn extract_zip(name: &str) {
 
     let mut arch = zip::ZipArchive::new(file).unwrap();
 
-    arch.extract("bin/");
+    arch.extract("bin/").unwrap();
+
+    fs::remove_file(fname).unwrap();
 }

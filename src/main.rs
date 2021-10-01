@@ -1,9 +1,18 @@
+extern crate clap;
+use clap::{crate_version, App, Arg};
 use serde_json::{from_str, Value};
 mod unzip;
 use unzip::extract_zip;
 
 fn read_index() -> Result<Value, serde_json::Error> {
-    let temp = std::fs::read_to_string("index.json").unwrap();
+    let wazir_dir = std::env::var("WAZIR_DIR");
+
+    let temp = if wazir_dir.is_ok() {
+        let wazir_dir = wazir_dir.unwrap();
+        std::fs::read_to_string(wazir_dir + "/index.json").unwrap()
+    } else {
+        panic!("$WAZIR_DIR is not defined");
+    };
     Ok(from_str(temp.as_str()).unwrap())
 }
 
@@ -55,21 +64,25 @@ async fn install(value: &Value, name: &str) {
 #[tokio::main]
 async fn main() {
     let index: Value = read_index().unwrap();
-    let argv = std::env::args().collect::<Vec<String>>();
 
-    if argv.len() == 1 {
-        // TODO: Print help.
-        return;
+    let app = App::new("Wazir")
+        .author("Rishit Khandelwal <github.com/rishit-khandelwal>")
+        .version(crate_version!())
+        .about("A hobby package manager")
+        .arg(
+            Arg::with_name("install")
+                .short("i")
+                .long("install")
+                .value_name("PKG")
+                .help("Install a package")
+                .takes_value(true),
+        );
+
+    let matches = app.get_matches();
+
+    let package = matches.value_of("install");
+
+    if let Some(package) = package {
+        install(&index, package).await;
     }
-
-    match argv[1].as_str() {
-        "install" => {
-            if argv.len() > 2 {
-                install(&index, argv[2].as_str()).await;
-            }
-        }
-        _ => {}
-    }
-
-    // println!("{}", index[argv[1].as_str()]);
 }
